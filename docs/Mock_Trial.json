@@ -1,0 +1,93 @@
+[
+  {
+    "nct_id": "NCT03049891",
+    "trial_id": "T-CT-001",
+    "title": "Pediatric Decentralization of ART in South Africa",
+    "phase": "Implementation/Observational",
+    "region": "South Africa",
+    "sponsor": "Local health program / academic",
+    "inclusion": [
+      "HIV positive",
+      "age < 15 years",
+      "initiated ART at designated facility during study period"
+    ],
+    "exclusion": [
+      "Not started ART before end of specified period",
+      "Lost to follow-up before enrolment window"
+    ],
+    "notes": "Decentralisation / delivery of routine ART services to primary care; suitable for pediatric trial-matching (adherence / viral-load endpoints).",
+    "source": "ClinicalTrials.gov (NCT03049891)"
+  },
+  {
+    "nct_id": "NCT04038632",
+    "trial_id": "T-CT-002",
+    "title": "TB-Speed Decentralisation (childhood TB diagnostic decentralisation)",
+    "phase": "Implementation / Multi-country",
+    "region": "Multiple (Cambodia, Cameroon, Côte d’Ivoire, Mozambique, Sierra Leone, Uganda)",
+    "sponsor": "TB-Speed consortium / Unitaid",
+    "inclusion": [
+      "Child with presumptive pulmonary TB (symptoms consistent with TB)",
+      "Age: pediatric (site-specific definitions)"
+    ],
+    "exclusion": [
+      "Parent/guardian does not consent to study-specific sample collection",
+      "Severe comorbidity preventing participation"
+    ],
+    "notes": "Decentralisation of TB diagnostic capacity to PHC/DH levels; useful for diagnostic / screening DCT elements.",
+    "source": "ClinicalTrials.gov / TB-Speed protocol"
+  },
+  {
+    "nct_id": "NCT05048472",
+    "trial_id": "T-CT-003",
+    "title": "East Africa Point of Care Viral Load Study (EAPoC-VL)",
+    "phase": "Implementation / Feasibility",
+    "region": "East Africa",
+    "sponsor": "Regional consortium / academic",
+    "inclusion": [
+      "People receiving ART requiring viral load monitoring",
+      "Age >= 18 (adult cohorts) — check site-specific age criteria"
+    ],
+    "exclusion": [
+      "Not on ART",
+      "Unable/unwilling to provide informed consent"
+    ],
+    "notes": "Point-of-care decentralised viral load monitoring to improve retention and suppression — good match for remote monitoring trials.",
+    "source": "ClinicalTrials.gov (East Africa PoC VL study)"
+  },
+  {
+    "nct_id": "NCT06176859",
+    "trial_id": "T-CT-004",
+    "title": "Delivery Optimization for Pre-Exposure Prophylaxis (Decentralized service delivery)",
+    "phase": "Implementation / Randomized",
+    "region": "Multi-site (decen. delivery model)",
+    "sponsor": "Programmatic / implementation partner",
+    "inclusion": [
+      "At-risk individuals eligible for PrEP per local guidelines",
+      "Age: site-specified (usually >= 16 or 18)"
+    ],
+    "exclusion": [
+      "Contraindication to PrEP medications",
+      "Currently enrolled in conflicting prevention trial"
+    ],
+    "notes": "Decentralized home/remote delivery model for PrEP — useful to demo DCT recruitment and remote interventions.",
+    "source": "ClinicalTrials.gov (Decentralized PrEP delivery)"
+  },
+  {
+    "nct_id": "NCT05333679",
+    "trial_id": "T-CT-005",
+    "title": "Urine Tenofovir Point-of-care Test to Identify Patients in TDF-based regimens",
+    "phase": "Randomized / Diagnostic evaluation",
+    "region": "Multi-site (including African sites)",
+    "sponsor": "Academic / public health partner",
+    "inclusion": [
+      "People taking TDF-based ART",
+      "Age: adult (site-specific)"
+    ],
+    "exclusion": [
+      "Not on TDF-based regimen",
+      "Unable to provide specimen"
+    ],
+    "notes": "Diagnostic point-of-care test for adherence; suitable for remote monitoring DCT use-cases.",
+    "source": "ClinicalTrials.gov (Urine Tenofovir PoC test)"
+  }
+]
