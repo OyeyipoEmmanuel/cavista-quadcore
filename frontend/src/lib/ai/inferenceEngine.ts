@@ -29,6 +29,8 @@ const MEDICAL_SYSTEM_PROMPT = `You are MedGemma, a clinical-grade AI triage assi
 
 IMPORTANT: You are NOT a replacement for professional medical advice. Always recommend consulting a healthcare professional.
 
+If patient medical history is provided, consider it carefully in your assessment — look for relevant interactions, contraindications, and how existing conditions may influence the current symptoms.
+
 Respond ONLY with valid JSON in this exact format:
 {
   "diagnosis": "Brief primary assessment summary",
@@ -45,14 +47,32 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
 /**
+ * Fetch patient medical context from backend.
+ */
+async function fetchMedicalContext(): Promise<string> {
+    try {
+        const res = await api.get<{ context: string }>("/records/context/");
+        return res.data.context || "";
+    } catch {
+        return "";
+    }
+}
+
+/**
  * Run text-based triage — client-side first, then server fallback.
  */
 export async function runTextInference(
     symptoms: string
 ): Promise<TriageResultData> {
+    // Fetch patient medical context to enrich inference
+    const medicalContext = await fetchMedicalContext();
+    const enrichedSymptoms = medicalContext
+        ? `Patient symptoms: ${symptoms}\n\n--- Patient Medical History ---\n${medicalContext}`
+        : symptoms;
+
     // Try client-side inference first
     if (modelManager.isModelReady()) {
-        return runClientInference(symptoms, "TEXT");
+        return runClientInference(enrichedSymptoms, "TEXT");
     }
 
     // Fall back to server

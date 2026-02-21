@@ -10,6 +10,16 @@ export default defineConfig({
             "@": fileURLToPath(new URL("./src", import.meta.url)),
         },
     },
+    build: {
+        chunkSizeWarningLimit: 1000, // web-llm chunk is large but lazy-loaded
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    "vendor-webllm": ["@mlc-ai/web-llm"],
+                },
+            },
+        },
+    },
     server: {
         port: 5173,
         proxy: {

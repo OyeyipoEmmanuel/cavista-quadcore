@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import type { UserRole } from "@/types";
@@ -10,7 +10,26 @@ import { PatientDashboard } from "@/features/dashboard/PatientDashboard";
 import { ClinicianDashboard } from "@/features/dashboard/ClinicianDashboard";
 import { SponsorDashboard } from "@/features/dashboard/SponsorDashboard";
 import { DashboardLayout } from "@/shared/layout/DashboardLayout";
-import { TriagePage } from "@/features/triage/TriagePage";
+
+// Lazy-load heavy pages to keep the initial bundle small.
+// TriagePage pulls in @mlc-ai/web-llm (~2MB) — only load when navigated to.
+const LazyTriagePage = React.lazy(() =>
+    import("@/features/triage/TriagePage").then((m) => ({ default: m.TriagePage }))
+);
+const LazyRecordsPage = React.lazy(() =>
+    import("@/features/records/RecordsPage").then((m) => ({ default: m.RecordsPage }))
+);
+
+function LazyFallback(): React.ReactNode {
+    return (
+        <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--color-primary)] border-t-transparent mx-auto" />
+                <p className="text-sm text-[var(--color-text-secondary)]">Loading…</p>
+            </div>
+        </div>
+    );
+}
 
 function ProtectedRoute({
     children,
@@ -84,11 +103,25 @@ export function AppRouter(): React.ReactNode {
                 }
             />
             <Route
+                path="/dashboard/patient/records"
+                element={
+                    <ProtectedRoute allowedRoles={["PATIENT"]}>
+                        <DashboardLayout>
+                            <Suspense fallback={<LazyFallback />}>
+                                <LazyRecordsPage />
+                            </Suspense>
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
                 path="/dashboard/patient/triage"
                 element={
                     <ProtectedRoute allowedRoles={["PATIENT"]}>
                         <DashboardLayout>
-                            <TriagePage />
+                            <Suspense fallback={<LazyFallback />}>
+                                <LazyTriagePage />
+                            </Suspense>
                         </DashboardLayout>
                     </ProtectedRoute>
                 }
@@ -108,7 +141,9 @@ export function AppRouter(): React.ReactNode {
                 element={
                     <ProtectedRoute allowedRoles={["CLINICIAN"]}>
                         <DashboardLayout>
-                            <TriagePage />
+                            <Suspense fallback={<LazyFallback />}>
+                                <LazyTriagePage />
+                            </Suspense>
                         </DashboardLayout>
                     </ProtectedRoute>
                 }

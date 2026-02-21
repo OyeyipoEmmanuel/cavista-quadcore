@@ -1,1 +1,1 @@
-# Models will be implemented in PRD 3+
+from apps.records.models.medical_record import MedicalDocument, MedicalRecord

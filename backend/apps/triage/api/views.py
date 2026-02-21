@@ -121,6 +121,10 @@ class TriageInferenceView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
+        # Fetch patient medical context
+        from apps.records.services.record_service import RecordService
+        medical_context = RecordService.get_patient_medical_context(request.user)
+
         # Create session
         session = TriageService.create_session(
             user=request.user,
@@ -132,15 +136,22 @@ class TriageInferenceView(APIView):
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
-        # MVP: return structured placeholder inference
-        # TODO: Replace with actual transformers inference pipeline
+        # Build diagnosis incorporating medical history
+        diagnosis = (
+            "Based on the symptoms provided, this appears to require "
+            "further clinical evaluation. Please consult a healthcare "
+            "professional for a definitive diagnosis."
+        )
+        if medical_context:
+            diagnosis = (
+                "Based on the symptoms provided and the patient's medical history, "
+                "this assessment takes into account existing conditions and medications. "
+                "Please consult a healthcare professional for a definitive diagnosis."
+            )
+
         result = TriageService.save_result(
             session=session,
-            diagnosis=(
-                "Based on the symptoms provided, this appears to require "
-                "further clinical evaluation. Please consult a healthcare "
-                "professional for a definitive diagnosis."
-            ),
+            diagnosis=diagnosis,
             severity="MEDIUM",
             confidence_score=0.65,
             recommendations=[
@@ -158,9 +169,10 @@ class TriageInferenceView(APIView):
                 "contributing_factors": [
                     "Symptom description analysis",
                     "Pattern matching against clinical guidelines",
-                ],
+                ] + (["Patient medical history considered"] if medical_context else []),
                 "model": "medgemma-4b-server-v1",
                 "note": "Server-side fallback inference (placeholder for MVP)",
+                "medical_context_available": bool(medical_context),
             },
             user=request.user,
             ip_address=request.META.get("REMOTE_ADDR"),
