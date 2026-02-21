@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
+from apps.common.encryption import EncryptedCharField
 from apps.users.models.manager import UserManager
 
 
@@ -25,8 +26,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         editable=False,
     )
     email = models.EmailField(unique=True, db_index=True)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
+    first_name = EncryptedCharField(max_length=150)
+    last_name = EncryptedCharField(max_length=150)
     role = models.CharField(
         max_length=20,
         choices=Role.choices,

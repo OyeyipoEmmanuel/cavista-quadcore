@@ -2,6 +2,8 @@ import uuid
 
 from django.db import models
 
+from apps.common.encryption import EncryptedCharField, EncryptedTextField
+
 
 class AuditLog(models.Model):
     """
@@ -28,11 +30,11 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=20, choices=Action.choices, db_index=True)
     resource_type = models.CharField(max_length=100, db_index=True)
     resource_id = models.CharField(max_length=255, db_index=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True, default="")
+    ip_address = EncryptedCharField(max_length=45, null=True, blank=True)
+    user_agent = EncryptedTextField(blank=True, default="")
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     changes = models.JSONField(default=dict, blank=True)
-    electronic_signature = models.TextField(blank=True, default="")
+    electronic_signature = EncryptedTextField(blank=True, default="")
 
     class Meta:
         db_table = "audit_logs"

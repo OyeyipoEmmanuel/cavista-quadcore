@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from apps.common.encryption import EncryptedCharField, EncryptedTextField
+
 
 class ConsentRecord(models.Model):
     """
@@ -37,8 +39,8 @@ class ConsentRecord(models.Model):
     granted_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    electronic_signature = models.TextField(blank=True, default="")
+    ip_address = EncryptedCharField(max_length=45, null=True, blank=True)
+    electronic_signature = EncryptedTextField(blank=True, default="")
     version = models.CharField(max_length=20, default="1.0")
 
     class Meta:

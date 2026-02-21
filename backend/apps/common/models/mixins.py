@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.common.encryption import EncryptedCharField, EncryptedTextField
+
 
 class AuditMixin(models.Model):
     """
@@ -8,8 +10,8 @@ class AuditMixin(models.Model):
     explicit audit trail fields beyond the standard created_by/updated_by.
     """
 
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True, default="")
+    ip_address = EncryptedCharField(max_length=45, null=True, blank=True)
+    user_agent = EncryptedTextField(blank=True, default="")
 
     class Meta:
         abstract = True
