@@ -11,4 +11,7 @@ urlpatterns = [
     path("api/v1/audit/", include("apps.audit.api.urls")),
     path("api/v1/consent/", include("apps.consent.api.urls")),
     path("api/v1/triage/", include("apps.triage.api.urls")),
+    path("api/v1/xai/", include("apps.xai.api.urls")),
+    path("api/v1/records/", include("apps.records.api.urls")),
+    path("api/v1/clinicians/", include("apps.clinicians.api.urls")),
 ]

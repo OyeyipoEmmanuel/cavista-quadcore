@@ -78,3 +78,26 @@ class ExplanationSummarySerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+
+class FirstAidPrescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.xai.models.prescription import FirstAidPrescription
+        model = FirstAidPrescription
+        fields = [
+            "id",
+            "symptoms_text",
+            "urgency",
+            "drugs",
+            "warnings",
+            "disclaimer",
+            "medical_context_used",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class GeneratePrescriptionSerializer(serializers.Serializer):
+    symptoms_text = serializers.CharField(max_length=5000)
+    session_id = serializers.UUIDField(required=False, allow_null=True, default=None)
+

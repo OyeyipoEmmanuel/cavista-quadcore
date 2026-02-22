@@ -27,7 +27,7 @@ export function Logo({ className = "", size = "md" }: LogoProps): React.ReactNod
                 </svg>
             </div>
             <span className={`font-bold text-[var(--color-text)] tracking-tight ${sizeMap[size]}`}>
-                Cavista
+                DiagMed
             </span>
         </div>
     );

@@ -10,6 +10,7 @@ import { PatientDashboard } from "@/features/dashboard/PatientDashboard";
 import { ClinicianDashboard } from "@/features/dashboard/ClinicianDashboard";
 import { SponsorDashboard } from "@/features/dashboard/SponsorDashboard";
 import { DashboardLayout } from "@/shared/layout/DashboardLayout";
+import { ComingSoon } from "@/shared/ui/ComingSoon";
 
 // Lazy-load heavy pages to keep the initial bundle small.
 // TriagePage pulls in @mlc-ai/web-llm (~2MB) — only load when navigated to.
@@ -18,6 +19,9 @@ const LazyTriagePage = React.lazy(() =>
 );
 const LazyRecordsPage = React.lazy(() =>
     import("@/features/records/RecordsPage").then((m) => ({ default: m.RecordsPage }))
+);
+const LazyCliniciansPage = React.lazy(() =>
+    import("@/features/clinicians/CliniciansPage").then((m) => ({ default: m.CliniciansPage }))
 );
 
 function LazyFallback(): React.ReactNode {
@@ -92,6 +96,8 @@ export function AppRouter(): React.ReactNode {
                     </ProtectedRoute>
                 }
             />
+
+            {/* ── Patient Routes ── */}
             <Route
                 path="/dashboard/patient"
                 element={
@@ -127,6 +133,51 @@ export function AppRouter(): React.ReactNode {
                 }
             />
             <Route
+                path="/dashboard/patient/clinicians"
+                element={
+                    <ProtectedRoute allowedRoles={["PATIENT"]}>
+                        <DashboardLayout>
+                            <Suspense fallback={<LazyFallback />}>
+                                <LazyCliniciansPage />
+                            </Suspense>
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/dashboard/patient/consents"
+                element={
+                    <ProtectedRoute allowedRoles={["PATIENT"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Consent Management" description="Manage your data sharing consents, grant or revoke access to your medical records, and view active consent agreements." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/patient/trials"
+                element={
+                    <ProtectedRoute allowedRoles={["PATIENT"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Trial Eligibility" description="Discover clinical trials you may be eligible for based on your medical profile, and manage your participation status." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/patient/profile"
+                element={
+                    <ProtectedRoute allowedRoles={["PATIENT"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Patient Profile" description="View and update your personal information, contact details, and notification preferences." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ── Clinician Routes ── */}
+            <Route
                 path="/dashboard/clinician"
                 element={
                     <ProtectedRoute allowedRoles={["CLINICIAN"]}>
@@ -149,11 +200,125 @@ export function AppRouter(): React.ReactNode {
                 }
             />
             <Route
+                path="/dashboard/clinician/patients"
+                element={
+                    <ProtectedRoute allowedRoles={["CLINICIAN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Patient Management" description="View your assigned patients, access their medical records, and manage ongoing care plans." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/clinician/reports"
+                element={
+                    <ProtectedRoute allowedRoles={["CLINICIAN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Clinical Reports" description="Generate and review clinical reports, triage summaries, and patient outcome analytics." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/clinician/profile"
+                element={
+                    <ProtectedRoute allowedRoles={["CLINICIAN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Clinician Profile" description="Manage your professional profile, credentials, license information, and notification settings." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ── Sponsor Routes ── */}
+            <Route
                 path="/dashboard/sponsor"
                 element={
                     <ProtectedRoute allowedRoles={["SPONSOR"]}>
                         <DashboardLayout>
                             <SponsorDashboard />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/sponsor/trials"
+                element={
+                    <ProtectedRoute allowedRoles={["SPONSOR"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Active Trials" description="Monitor your sponsored clinical trials, view enrollment status, and track milestones." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/sponsor/recruitment"
+                element={
+                    <ProtectedRoute allowedRoles={["SPONSOR"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Recruitment Analytics" description="Track recruitment metrics, view eligible patient pools, and manage outreach campaigns." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/sponsor/exports"
+                element={
+                    <ProtectedRoute allowedRoles={["SPONSOR"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Data Exports" description="Export anonymized trial data in FHIR-compatible formats for analysis and regulatory submissions." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/sponsor/profile"
+                element={
+                    <ProtectedRoute allowedRoles={["SPONSOR"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Sponsor Profile" description="Manage your organization profile, team members, and account settings." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* ── Admin Routes ── */}
+            <Route
+                path="/dashboard/admin"
+                element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Admin Overview" description="System-wide dashboard with user statistics, system health, and key operational metrics." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/admin/users"
+                element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="User Management" description="Manage user accounts, roles, permissions, and access controls across the platform." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/admin/audit"
+                element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="Audit Logs" description="View immutable audit trails for all system actions, data access events, and compliance records." />
+                        </DashboardLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dashboard/admin/settings"
+                element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                        <DashboardLayout>
+                            <ComingSoon title="System Settings" description="Configure system-wide settings, security policies, and integration parameters." />
                         </DashboardLayout>
                     </ProtectedRoute>
                 }
@@ -164,3 +329,4 @@ export function AppRouter(): React.ReactNode {
         </Routes>
     );
 }
+

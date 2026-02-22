@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import type { TriageResultData } from "@/lib/ai/inferenceEngine";
 import { Card } from "@/shared/ui/Card";
 import { Badge } from "@/shared/ui/Badge";
+import { Button } from "@/shared/ui/Button";
+import api from "@/services/api";
+import { PrescriptionCard, type PrescriptionData } from "./PrescriptionCard";
+import { ClinicianList } from "@/features/clinicians/components/ClinicianList";
+import { clinicianService } from "@/services/clinician.service";
 
 interface TriageResultsProps {
     result: TriageResultData;
@@ -21,6 +26,50 @@ export function TriageResults({ result }: TriageResultsProps): React.ReactNode {
     const defaultSeverity = { color: "warning" as const, label: "Medium Severity", bg: "bg-amber-50 border-amber-200" };
     const severityKey = result.severity || "MEDIUM";
     const severity = (severityKey in severityConfig) ? severityConfig[severityKey]! : defaultSeverity;
+
+    const [prescription, setPrescription] = useState<PrescriptionData | null>(null);
+    const [isLoadingRx, setIsLoadingRx] = useState(false);
+    const [rxError, setRxError] = useState("");
+
+    const [isBooking, setIsBooking] = useState(false);
+    const [bookingSuccess, setBookingSuccess] = useState(false);
+    const [bookingError, setBookingError] = useState("");
+
+    const handleGetPrescription = async (): Promise<void> => {
+        setIsLoadingRx(true);
+        setRxError("");
+        try {
+            const symptomsText =
+                result.diagnosis || "General symptoms requiring first aid";
+            const res = await api.post<PrescriptionData>("/xai/prescriptions/", {
+                symptoms_text: symptomsText,
+                session_id: result.sessionId || null,
+            });
+            setPrescription(res.data);
+        } catch {
+            setRxError("Failed to generate first aid suggestions. Please try again.");
+        } finally {
+            setIsLoadingRx(false);
+        }
+    };
+
+    const handleBook = async (clinicianId: string): Promise<void> => {
+        setIsBooking(true);
+        setBookingError("");
+        try {
+            await clinicianService.bookAppointment({
+                clinician_id: clinicianId,
+                scheduled_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+                triage_session_id: result.sessionId || undefined,
+                notes: `Follow-up for diagnosis: ${result.diagnosis.substring(0, 100)}...`,
+            });
+            setBookingSuccess(true);
+        } catch {
+            setBookingError("Failed to book appointment. Please try again or contact support.");
+        } finally {
+            setIsBooking(false);
+        }
+    };
 
     return (
         <div className="space-y-6 animate-fade-in-up">
@@ -58,7 +107,7 @@ export function TriageResults({ result }: TriageResultsProps): React.ReactNode {
             {result.recommendations.length > 0 && (
                 <Card>
                     <h3 className="font-semibold text-[var(--color-text)] mb-3">
-                        💊 Recommendations
+                        💡 Recommendations
                     </h3>
                     <ul className="space-y-2">
                         {result.recommendations.map((rec, i) => (
@@ -143,6 +192,82 @@ export function TriageResults({ result }: TriageResultsProps): React.ReactNode {
                     </Card>
                 )}
 
+            {/* First Aid Prescription Section */}
+            <Card>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-[var(--color-text)]">
+                        💊 First Aid — Temporary Relief
+                    </h3>
+                    {!prescription && (
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={handleGetPrescription}
+                            isLoading={isLoadingRx}
+                            disabled={isLoadingRx}
+                        >
+                            {isLoadingRx ? "Generating..." : "Get First Aid Suggestions"}
+                        </Button>
+                    )}
+                </div>
+
+                {!prescription && !isLoadingRx && !rxError && (
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                        Based on your symptoms and medical records, we can suggest safe
+                        over-the-counter medications for <strong>temporary</strong> symptom
+                        relief while you arrange to see a doctor.
+                    </p>
+                )}
+
+                {rxError && (
+                    <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                        {rxError}
+                    </div>
+                )}
+
+                {prescription && <PrescriptionCard prescription={prescription} />}
+            </Card>
+
+            {/* Book a Clinician Section */}
+            <Card className="relative overflow-hidden border-2 border-blue-100 shadow-xl shadow-blue-50/50">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <span className="text-8xl">🩺</span>
+                </div>
+
+                <div className="flex items-start gap-4 mb-8">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-xl shadow-lg shadow-blue-200 shrink-0">
+                        🏥
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900">
+                            Clinical Consultation Network
+                        </h3>
+                        <p className="text-sm text-slate-500 mt-1 max-w-lg leading-relaxed">
+                            Connect with verified specialists to review your AI assessment and formulate a personalized treatment plan.
+                        </p>
+                    </div>
+                </div>
+
+                {bookingSuccess ? (
+                    <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-xl text-center space-y-3">
+                        <div className="text-3xl">✅</div>
+                        <h4 className="font-bold text-emerald-900">Appointment Booked!</h4>
+                        <p className="text-sm text-emerald-700">
+                            Your follow-up has been scheduled. You can view details in your dashboard.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        {bookingError && (
+                            <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100">
+                                {bookingError}
+                            </div>
+                        )}
+                    </>
+                )}
+                <ClinicianList onBook={handleBook} bookingInProgress={isBooking} />
+            </Card>
+
             {/* Disclaimer */}
             <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
                 <p className="text-xs text-amber-800">
@@ -155,3 +280,4 @@ export function TriageResults({ result }: TriageResultsProps): React.ReactNode {
         </div>
     );
 }
+

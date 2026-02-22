@@ -1,8 +1,12 @@
 /**
- * Inference Engine
+ * Inference Engine — Hybrid Cloud/Offline Architecture
  *
- * Orchestrates text and image inference — tries client-side (WebLLM)
- * first, falls back to backend API if WebGPU is unavailable.
+ * DEFAULT: All AI requests go to the Django backend (fast, no download).
+ * OPTIONAL: If user enables Offline Mode, inference uses WebLLM on-device.
+ *
+ * Routing logic:
+ *   if (modelManager.isModelReady()) → browser inference
+ *   else → backend API call
  */
 
 import { modelManager } from "@/lib/ai/modelManager";
@@ -47,7 +51,7 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
 /**
- * Fetch patient medical context from backend.
+ * Fetch patient medical context from backend (used for both modes).
  */
 async function fetchMedicalContext(): Promise<string> {
     try {
@@ -58,41 +62,42 @@ async function fetchMedicalContext(): Promise<string> {
     }
 }
 
+// ------------------------------------------------------------------ //
+// Public inference functions                                          //
+// ------------------------------------------------------------------ //
+
 /**
- * Run text-based triage — client-side first, then server fallback.
+ * Run text-based triage.
+ * Cloud-first: always uses server unless offline model is loaded.
  */
 export async function runTextInference(
     symptoms: string
 ): Promise<TriageResultData> {
-    // Fetch patient medical context to enrich inference
-    const medicalContext = await fetchMedicalContext();
-    const enrichedSymptoms = medicalContext
-        ? `Patient symptoms: ${symptoms}\n\n--- Patient Medical History ---\n${medicalContext}`
-        : symptoms;
-
-    // Try client-side inference first
+    // Route: if offline model is ready, use it; otherwise cloud
     if (modelManager.isModelReady()) {
+        const medicalContext = await fetchMedicalContext();
+        const enrichedSymptoms = medicalContext
+            ? `Patient symptoms: ${symptoms}\n\n--- Patient Medical History ---\n${medicalContext}`
+            : symptoms;
         return runClientInference(enrichedSymptoms, "TEXT");
     }
 
-    // Fall back to server
+    // Default — cloud inference (fast, no download)
     return runServerInference(symptoms, "TEXT");
 }
 
 /**
- * Run image-based triage (server-only for MVP, as WebLLM vision
- * support for MedSigLIP requires additional setup).
+ * Run image-based triage (always server — WebLLM doesn't support vision).
  */
 export async function runImageInference(
     symptoms: string,
     image: File
 ): Promise<TriageResultData> {
-    // Image analysis currently goes through server
     return runServerInference(symptoms, "IMAGE", image);
 }
 
 /**
- * Run multimodal triage (text + image).
+ * Run multimodal triage (text + image, always server).
  */
 export async function runMultimodalInference(
     symptoms: string,
@@ -101,14 +106,51 @@ export async function runMultimodalInference(
     return runServerInference(symptoms, "MULTIMODAL", image);
 }
 
-/**
- * Client-side inference via WebLLM.
- */
+// ------------------------------------------------------------------ //
+// Cloud (Server) Inference                                            //
+// ------------------------------------------------------------------ //
+
+async function runServerInference(
+    symptoms: string,
+    source: "TEXT" | "IMAGE" | "MULTIMODAL",
+    image?: File
+): Promise<TriageResultData> {
+    // Image upload flow
+    if (image && (source === "IMAGE" || source === "MULTIMODAL")) {
+        const res = await api.post("/triage/inference/", {
+            symptoms_text: symptoms,
+            source,
+        });
+        const session = res.data;
+
+        const imgForm = new FormData();
+        imgForm.append("session_id", session.id);
+        imgForm.append("image", image);
+        await api.post("/triage/images/", imgForm, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        return mapSessionToResult(session, "SERVER");
+    }
+
+    // Standard text inference
+    const res = await api.post("/triage/inference/", {
+        symptoms_text: symptoms,
+        source,
+    });
+
+    return mapSessionToResult(res.data, "SERVER");
+}
+
+// ------------------------------------------------------------------ //
+// Offline (WebLLM) Inference                                          //
+// ------------------------------------------------------------------ //
+
 async function runClientInference(
     symptoms: string,
     source: "TEXT" | "IMAGE" | "MULTIMODAL"
 ): Promise<TriageResultData> {
-    // 1. Create session on backend
+    // 1. Create session on backend for audit trail
     const sessionRes = await api.post("/triage/sessions/", {
         symptoms_text: symptoms,
         source,
@@ -155,49 +197,10 @@ async function runClientInference(
     }
 }
 
-/**
- * Server-side fallback inference.
- */
-async function runServerInference(
-    symptoms: string,
-    source: "TEXT" | "IMAGE" | "MULTIMODAL",
-    image?: File
-): Promise<TriageResultData> {
-    // If there's an image, upload it alongside inference
-    if (image && (source === "IMAGE" || source === "MULTIMODAL")) {
-        const formData = new FormData();
-        formData.append("symptoms_text", symptoms);
-        formData.append("source", source);
+// ------------------------------------------------------------------ //
+// Helpers                                                             //
+// ------------------------------------------------------------------ //
 
-        const res = await api.post("/triage/inference/", {
-            symptoms_text: symptoms,
-            source,
-        });
-
-        const session = res.data;
-
-        // Upload image to the session
-        const imgForm = new FormData();
-        imgForm.append("session_id", session.id);
-        imgForm.append("image", image);
-        await api.post("/triage/images/", imgForm, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        return mapSessionToResult(session, "SERVER");
-    }
-
-    const res = await api.post("/triage/inference/", {
-        symptoms_text: symptoms,
-        source,
-    });
-
-    return mapSessionToResult(res.data, "SERVER");
-}
-
-/**
- * Parse raw model JSON output with fallback handling.
- */
 function parseModelResponse(raw: string): {
     diagnosis: string;
     severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -207,7 +210,6 @@ function parseModelResponse(raw: string): {
     explainability: Record<string, unknown>;
 } {
     try {
-        // Try to extract JSON from the response
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);

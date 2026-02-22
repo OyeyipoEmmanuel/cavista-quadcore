@@ -38,15 +38,17 @@ export function LandingPage(): React.ReactNode {
                             🩺 HIPAA & GDPR Compliant • FDA 21 CFR Part 11
                         </span>
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-extrabold text-[var(--color-text)] tracking-tight leading-[1.1] mb-6 animate-fade-in-up animation-delay-100">
-                        Equitable Healthcare,
+                    <h1 className="text-5xl md:text-7xl font-extrabold text-[var(--color-text)] tracking-tight leading-[1.1] animate-fade-in-up animation-delay-100">
+                        Clinical Triage Without Borders
                         <br />
-                        <span className="text-[var(--color-primary)]">Powered by AI</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-10 animate-fade-in-up animation-delay-200 leading-relaxed">
-                        Clinical-grade AI triage that works offline, reaching patients in
-                        low-resource settings while connecting diverse populations with
-                        decentralized clinical trials.
+                    <div className="mt-3 mb-2 animate-fade-in-up animation-delay-100">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-sm">
+                            Powered by AI
+                        </span>
+                    </div>
+                    <p className="text-lg md:text-xl text-[var(--color-text-secondary)] mt-6 max-w-2xl mx-auto mb-10 animate-fade-in-up animation-delay-200 leading-relaxed">
+                        A hybrid-AI diagnostic engine designed for the world's most remote regions. From offline image analysis to automated patient matching for clinical trials, we’re making high-quality care—and high-impact research—accessible to everyone, everywhere
                     </p>
                     <div className="flex items-center justify-center gap-4 animate-fade-in-up animation-delay-300">
                         <Link to="/register">

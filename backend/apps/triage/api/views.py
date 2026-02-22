@@ -108,10 +108,8 @@ class TriageResultCreateView(APIView):
 
 class TriageInferenceView(APIView):
     """
-    POST — fallback server-side inference.
-    Used when the client device does not support WebGPU.
-    For MVP, returns a structured placeholder response.
-    Full inference will be integrated when the model service is deployed.
+    POST — Server-side AI inference using Google Gemini (MedGemma).
+    Sends patient symptoms + medical history to AI and returns structured diagnosis.
     """
 
     permission_classes = [IsAuthenticated]
@@ -123,7 +121,15 @@ class TriageInferenceView(APIView):
 
         # Fetch patient medical context
         from apps.records.services.record_service import RecordService
+        from apps.triage.services.gemini_service import GeminiService
+
         medical_context = RecordService.get_patient_medical_context(request.user)
+
+        # Run AI inference via Gemini
+        ai_result = GeminiService.run_inference(
+            symptoms_text=data["symptoms_text"],
+            medical_context=medical_context or "",
+        )
 
         # Create session
         session = TriageService.create_session(
@@ -131,49 +137,30 @@ class TriageInferenceView(APIView):
             symptoms_text=data["symptoms_text"],
             source=data["source"],
             inference_mode="SERVER",
-            model_version="medgemma-4b-server-v1",
+            model_version="gemini-2.0-flash",
             ip_address=request.META.get("REMOTE_ADDR"),
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
-        # Build diagnosis incorporating medical history
-        diagnosis = (
-            "Based on the symptoms provided, this appears to require "
-            "further clinical evaluation. Please consult a healthcare "
-            "professional for a definitive diagnosis."
-        )
+        # Add medical context info to explainability
+        explainability = ai_result.get("explainability", {})
         if medical_context:
-            diagnosis = (
-                "Based on the symptoms provided and the patient's medical history, "
-                "this assessment takes into account existing conditions and medications. "
-                "Please consult a healthcare professional for a definitive diagnosis."
-            )
+            factors = explainability.get("contributing_factors", [])
+            if "Patient medical history considered" not in factors:
+                factors.append("Patient medical history considered")
+            explainability["contributing_factors"] = factors
+            explainability["medical_context_available"] = True
 
+        # Save AI result
         result = TriageService.save_result(
             session=session,
-            diagnosis=diagnosis,
-            severity="MEDIUM",
-            confidence_score=0.65,
-            recommendations=[
-                "Schedule an appointment with your primary care physician",
-                "Monitor symptoms and note any changes",
-                "Stay hydrated and get adequate rest",
-                "Seek emergency care if symptoms worsen significantly",
-            ],
-            differential_diagnoses=[
-                {"condition": "Common condition A", "confidence": 0.65},
-                {"condition": "Common condition B", "confidence": 0.20},
-                {"condition": "Common condition C", "confidence": 0.15},
-            ],
-            explainability={
-                "contributing_factors": [
-                    "Symptom description analysis",
-                    "Pattern matching against clinical guidelines",
-                ] + (["Patient medical history considered"] if medical_context else []),
-                "model": "medgemma-4b-server-v1",
-                "note": "Server-side fallback inference (placeholder for MVP)",
-                "medical_context_available": bool(medical_context),
-            },
+            diagnosis=ai_result["diagnosis"],
+            severity=ai_result["severity"],
+            confidence_score=ai_result["confidence_score"],
+            recommendations=ai_result["recommendations"],
+            differential_diagnoses=ai_result["differential_diagnoses"],
+            explainability=explainability,
+            raw_model_output=ai_result.get("raw_model_output", ""),
             user=request.user,
             ip_address=request.META.get("REMOTE_ADDR"),
             user_agent=request.META.get("HTTP_USER_AGENT", ""),

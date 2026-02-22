@@ -4,6 +4,7 @@ from apps.xai.api.views import (
     ClinicalExplanationView,
     ExplanationView,
     FeatureContributionsView,
+    PrescriptionView,
 )
 
 urlpatterns = [
@@ -22,4 +23,10 @@ urlpatterns = [
         FeatureContributionsView.as_view(),
         name="xai-features",
     ),
+    path(
+        "prescriptions/",
+        PrescriptionView.as_view(),
+        name="xai-prescriptions",
+    ),
 ]
+

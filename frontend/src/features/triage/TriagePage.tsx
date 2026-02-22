@@ -12,15 +12,16 @@ type Tab = "text" | "image" | "multimodal";
 
 export function TriagePage(): React.ReactNode {
     const {
+        inferenceMode,
         modelStatus,
         modelProgress,
         isInferring,
         isOffline,
         lastResult,
         error,
-        loadModel,
+        enableOfflineMode,
+        switchToCloud,
         runTriage,
-        unloadModel,
     } = useAIEngine();
 
     const [activeTab, setActiveTab] = useState<Tab>("text");
@@ -75,13 +76,14 @@ export function TriagePage(): React.ReactNode {
                 </button>
             </div>
 
-            {/* Model Status */}
+            {/* Mode Status — Cloud/Offline indicator */}
             <ModelStatusComponent
-                status={modelStatus}
+                inferenceMode={inferenceMode}
+                modelStatus={modelStatus}
                 progress={modelProgress}
                 isOffline={isOffline}
-                onLoadModel={loadModel}
-                onUnloadModel={unloadModel}
+                onEnableOffline={enableOfflineMode}
+                onSwitchToCloud={switchToCloud}
             />
 
             {showHistory ? (
@@ -101,8 +103,8 @@ export function TriagePage(): React.ReactNode {
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
                                     className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.key
-                                            ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)] bg-blue-50/50"
-                                            : "text-[var(--color-text-secondary)] hover:bg-gray-50"
+                                        ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)] bg-blue-50/50"
+                                        : "text-[var(--color-text-secondary)] hover:bg-gray-50"
                                         }`}
                                 >
                                     <span>{tab.icon}</span>
@@ -132,9 +134,9 @@ export function TriagePage(): React.ReactNode {
                             {/* Submit */}
                             <div className="mt-6 flex items-center justify-between">
                                 <p className="text-xs text-[var(--color-text-muted)]">
-                                    {modelStatus === "ready"
+                                    {inferenceMode === "offline" && modelStatus === "ready"
                                         ? "🔒 Analysis runs entirely on your device"
-                                        : "☁️ Analysis will use secure server"}
+                                        : "☁️ Analysis uses our secure cloud servers"}
                                 </p>
                                 <Button
                                     variant="primary"

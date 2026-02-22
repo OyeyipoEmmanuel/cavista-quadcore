@@ -12,6 +12,7 @@ interface NavItem {
 const roleNavItems: Record<UserRole, NavItem[]> = {
     PATIENT: [
         { label: "Overview", path: "/dashboard/patient", icon: "📊" },
+        { label: "Find a Clinician", path: "/dashboard/patient/clinicians", icon: "👨‍⚕️" },
         { label: "Medical Records", path: "/dashboard/patient/records", icon: "📋" },
         { label: "Consents", path: "/dashboard/patient/consents", icon: "✅" },
         { label: "Trial Eligibility", path: "/dashboard/patient/trials", icon: "🔬" },
@@ -55,8 +56,8 @@ export function Sidebar(): React.ReactNode {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${isActive
-                                    ? "bg-[var(--color-primary)] text-white"
-                                    : "text-[var(--color-text-secondary)] hover:bg-gray-100 hover:text-[var(--color-text)]"
+                                ? "bg-[var(--color-primary)] text-white"
+                                : "text-[var(--color-text-secondary)] hover:bg-gray-100 hover:text-[var(--color-text)]"
                                 }`}
                         >
                             <span className="text-base">{item.icon}</span>

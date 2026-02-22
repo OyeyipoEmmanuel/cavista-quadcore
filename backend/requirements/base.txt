@@ -8,4 +8,6 @@ django-encrypted-model-fields>=0.6
 django-ratelimit>=4.1
 psycopg[binary]>=3.1,<4.0
 gunicorn>=22.0,<23.0
+dj-database-url>=2.2.0
+whitenoise[brotli]>=6.7.
 Pillow

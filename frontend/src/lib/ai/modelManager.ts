@@ -3,7 +3,7 @@
  *
  * Singleton managing MedGemma 4B lifecycle via WebLLM.
  * Handles WebGPU detection, model loading with progress,
- * and persistent caching via browser Cache API.
+ * persistent caching via browser Cache API, and cancellation.
  */
 
 import type { MLCEngine, InitProgressReport } from "@mlc-ai/web-llm";
@@ -24,13 +24,14 @@ export interface ModelProgress {
 }
 
 // MedGemma model ID for WebLLM
-// Falls back to a smaller model if MedGemma is not available in the registry
 const PREFERRED_MODEL = "gemma-2-2b-it-q4f16_1-MLC";
 
 class ModelManager {
     private engine: MLCEngine | null = null;
     private status: ModelStatus = "idle";
     private progressCallback: ((progress: ModelProgress) => void) | null = null;
+    private cancelRequested = false;
+    private loadingPromise: Promise<boolean> | null = null;
 
     /**
      * Check if the browser supports WebGPU.
@@ -49,12 +50,26 @@ class ModelManager {
     }
 
     /**
-     * Initialize and load the model.
+     * Initialize and load the model. Supports cancellation via cancelLoad().
      */
     async initModel(
         onProgress?: (progress: ModelProgress) => void
     ): Promise<boolean> {
+        // If already loading, return existing promise
+        if (this.loadingPromise) {
+            return this.loadingPromise;
+        }
+
+        this.cancelRequested = false;
         this.progressCallback = onProgress || null;
+
+        this.loadingPromise = this._doInit();
+        const result = await this.loadingPromise;
+        this.loadingPromise = null;
+        return result;
+    }
+
+    private async _doInit(): Promise<boolean> {
         this.updateStatus("checking", 0, "Checking WebGPU support...");
 
         const hasWebGPU = await this.checkWebGPUSupport();
@@ -63,14 +78,24 @@ class ModelManager {
             return false;
         }
 
+        if (this.cancelRequested) {
+            this.updateStatus("idle", 0, "Cancelled");
+            return false;
+        }
+
         try {
             this.updateStatus("downloading", 0, "Initializing AI engine...");
 
-            // Dynamic import to avoid bundling WebLLM for non-WebGPU devices
             const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
 
-            this.engine = await CreateMLCEngine(PREFERRED_MODEL, {
+            if (this.cancelRequested) {
+                this.updateStatus("idle", 0, "Cancelled");
+                return false;
+            }
+
+            const engine = await CreateMLCEngine(PREFERRED_MODEL, {
                 initProgressCallback: (report: InitProgressReport) => {
+                    if (this.cancelRequested) return;
                     const progress = report.progress || 0;
                     this.updateStatus(
                         "downloading",
@@ -80,9 +105,21 @@ class ModelManager {
                 },
             });
 
+            // Check if cancelled while downloading
+            if (this.cancelRequested) {
+                await engine.unload();
+                this.updateStatus("idle", 0, "Cancelled");
+                return false;
+            }
+
+            this.engine = engine;
             this.updateStatus("ready", 1, "MedGemma AI engine ready");
             return true;
         } catch (error) {
+            if (this.cancelRequested) {
+                this.updateStatus("idle", 0, "Cancelled");
+                return false;
+            }
             console.error("Model initialization failed:", error);
             this.updateStatus(
                 "error",
@@ -91,6 +128,14 @@ class ModelManager {
             );
             return false;
         }
+    }
+
+    /**
+     * Cancel an in-progress model load.
+     */
+    cancelLoad(): void {
+        this.cancelRequested = true;
+        this.updateStatus("idle", 0, "Cancelling...");
     }
 
     /**
@@ -134,6 +179,9 @@ class ModelManager {
      * Unload the model to free GPU memory.
      */
     async unloadModel(): Promise<void> {
+        // Cancel any in-progress load
+        this.cancelRequested = true;
+
         if (this.engine) {
             await this.engine.unload();
             this.engine = null;

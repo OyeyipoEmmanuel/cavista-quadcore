@@ -8,8 +8,11 @@ from apps.triage.models.triage_session import TriageSession
 from apps.xai.api.serializers import (
     ExplanationSerializer,
     FeatureContributionSerializer,
+    FirstAidPrescriptionSerializer,
+    GeneratePrescriptionSerializer,
 )
 from apps.xai.services.xai_service import XAIService
+from apps.xai.services.prescription_service import PrescriptionService
 
 
 class ExplanationView(APIView):
@@ -174,3 +177,41 @@ class FeatureContributionsView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class PrescriptionView(APIView):
+    """
+    POST — Generate first-aid OTC drug prescription from symptoms.
+    GET  — List user's prescription history.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = GeneratePrescriptionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        triage_session = None
+        if data.get("session_id"):
+            triage_session = TriageSession.objects.filter(
+                id=data["session_id"], user=request.user,
+            ).first()
+
+        prescription = PrescriptionService.generate_prescription(
+            user=request.user,
+            symptoms_text=data["symptoms_text"],
+            triage_session=triage_session,
+            ip_address=request.META.get("REMOTE_ADDR"),
+            user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        )
+
+        return Response(
+            FirstAidPrescriptionSerializer(prescription).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request):
+        prescriptions = PrescriptionService.get_user_prescriptions(request.user)
+        serializer = FirstAidPrescriptionSerializer(prescriptions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
