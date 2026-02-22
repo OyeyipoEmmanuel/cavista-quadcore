@@ -19,9 +19,11 @@ export function LoginPage(): React.ReactNode {
         e.preventDefault();
         setError("");
         setIsLoading(true);
+        console.log({email, password})
 
         try {
             await login({ email, password });
+
             navigate("/dashboard");
         } catch (err: unknown) {
             if (err && typeof err === "object" && "response" in err) {

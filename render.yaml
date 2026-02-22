@@ -18,7 +18,7 @@ services:
       - key: ALLOWED_HOSTS
         value: "*"
       - key: CORS_ALLOWED_ORIGINS
-        value: "<YOUR_NETLIFY_FRONTEND_URL_HERE>" # You will need to update this after deploying the frontend
+        value: "https://diagmed-mvp.netlify.app"
       - key: GEMINI_API_KEY
         value: "<YOUR_GEMINI_API_KEY_HERE>" # Update in Render dashboard
       - key: FIELD_ENCRYPTION_KEY
