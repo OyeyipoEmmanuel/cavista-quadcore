@@ -68,21 +68,18 @@ class ConsentService:
     @staticmethod
     def check_consent(user, consent_type: str) -> bool:
         """Check if user has active consent of the given type."""
+        from django.db.models import Q
+
+        now = timezone.now()
         return ConsentRecord.objects.filter(
             user=user,
             consent_type=consent_type,
             revoked_at__isnull=True,
         ).filter(
-            models_Q_expires_not_passed(timezone.now())
+            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
         ).exists()
 
     @staticmethod
     def get_user_consents(user):
         """Get all consent records for a user."""
         return ConsentRecord.objects.filter(user=user)
-
-
-def models_Q_expires_not_passed(now):
-    """Helper to filter out expired consents."""
-    from django.db.models import Q
-    return Q(expires_at__isnull=True) | Q(expires_at__gt=now)

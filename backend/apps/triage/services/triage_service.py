@@ -6,6 +6,7 @@ from apps.triage.models.triage_session import (
     TriageResult,
     TriageSession,
 )
+from apps.xai.services.xai_service import XAIService
 
 
 class TriageService:
@@ -67,6 +68,7 @@ class TriageService:
         """
         Persist an AI inference result (from client-side or server-side).
         Updates the session status to COMPLETED.
+        Auto-generates an XAI explanation after saving.
         """
         result = TriageResult.objects.create(
             session=session,
@@ -91,6 +93,14 @@ class TriageService:
             ip_address=ip_address,
             user_agent=user_agent,
             changes={"severity": severity, "confidence": confidence_score},
+        )
+
+        # Auto-generate XAI explanation
+        XAIService.generate_explanation(
+            triage_result=result,
+            method="SHAP",
+            user=user or session.user,
+            ip_address=ip_address,
         )
 
         return result
